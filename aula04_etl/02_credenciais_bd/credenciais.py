@@ -35,19 +35,9 @@ credenciais = {
     "hostname": "localhost",        # endereço do servidor
     "username": "aluno",            # usuário
     "password": "harve123",         # senha
-    "port":      3306,              # porta padrão do MySQL
+    "port":      3306,               # porta padrão do MySQL
     "database":  "moduloetl",       # nome do banco
 }
-
-print("=" * 50)
-print("  CREDENCIAIS CONFIGURADAS")
-print("=" * 50)
-for chave, valor in credenciais.items():
-    # Oculta a senha no print por segurança
-    exibir = "****" if chave == "password" else valor
-    print(f"  {chave:10} → {exibir}")
-print()
-
 
 # ────────────────────────────────────────────────────────────
 #  PASSO 2 — Montando a String de Conexão
@@ -68,62 +58,87 @@ print()
 
 STRING_DE_CONEXAO = "sqlite:///harve_escola.db"
 
-print("  STRING DE CONEXÃO:")
-print(f"  {STRING_DE_CONEXAO}")
-print()
-print("  💡 SQLite = banco local, arquivo no seu computador")
-print("     Não precisa de servidor, usuário ou senha")
-print()
+
+def get_mysql_connection_string(credentials):
+    return (
+        f"mysql+pymysql://{credentials['username']}:{credentials['password']}@"
+        f"{credentials['hostname']}:{credentials['port']}/{credentials['database']}"
+    )
+
+
+def get_sqlite_connection_string(db_filename="harve_escola.db"):
+    return f"sqlite:///{db_filename}"
 
 
 # ────────────────────────────────────────────────────────────
-#  PASSO 3 — Criando o Engine e Conectando
+#  PASSO 3 — Criando o engine e abrindo a conexão
 # ────────────────────────────────────────────────────────────
 #
-#  create_engine() → cria o "motor" que sabe falar com o banco
-#  .connect()      → abre a conexão de fato
+#  O SQLAlchemy funciona em duas camadas:
+#  - engine: prepara a comunicação com o tipo de banco
+#  - connection: abre a conexão real com o banco
 #
-#  O try/except captura erros e mostra uma mensagem clara
-#  em vez de travar com um erro gigante
+#  A função create_engine() não se conecta ainda, ela apenas cria
+#  o motor que sabe falar com SQLite ou MySQL.
+#
+#  O método .connect() do engine abre a conexão de verdade.
+#  É como ligar o carro depois de entrar nele.
+#
+#  Depois de usar a conexão, sempre precisamos fechá-la com close()
+#  para liberar recursos e evitar que o banco fique preso.
+#
+#  No exemplo abaixo, só testamos a conexão com SELECT 1,
+#  que não acessa dados reais — apenas confirma que o banco responde.
+#
 
-print("=" * 50)
-print("  TESTANDO CONEXÃO...")
-print("=" * 50)
-
-try:
-    engine = create_engine(STRING_DE_CONEXAO)
-    conn   = engine.connect()
-
-    # SELECT 1 é o teste mais simples possível
-    # Só verifica se o banco responde — não acessa dado nenhum
-    conn.execute(text("SELECT 1"))
-
-    print("  ✅ Engine criado com sucesso!")
-    print("  ✅ Conexão estabelecida!")
-    print("  ✅ Banco respondendo!")
+if __name__ == "__main__":
+    print("=" * 50)
+    print("  CREDENCIAIS CONFIGURADAS")
+    print("=" * 50)
+    for chave, valor in credenciais.items():
+        # Oculta a senha no print por segurança
+        exibir = "****" if chave == "password" else valor
+        print(f"  {chave:10} → {exibir}")
     print()
-    print("  📁 Arquivo criado: harve_escola.db")
 
-except Exception as erro:
-    print(f"  ❌ Erro: {erro}")
-    conn = None
+    print("  STRING DE CONEXÃO:")
+    print(f"  {STRING_DE_CONEXAO}")
+    print()
+    print("  💡 SQLite = banco local, arquivo no seu computador")
+    print("     Não precisa de servidor, usuário ou senha")
+    print()
 
-finally:
-    if conn:
-        conn.close()
+    print("=" * 50)
+    print("  TESTANDO CONEXÃO...")
+    print("=" * 50)
+
+    try:
+        engine = create_engine(STRING_DE_CONEXAO)
+        conn = engine.connect()
+        conn.execute(text("SELECT 1"))
+
+        print("  ✅ Engine criado com sucesso!")
+        print("  ✅ Conexão estabelecida!")
+        print("  ✅ Banco respondendo!")
         print()
-        print("  🔒 Conexão fechada.")
+        print("  📁 Arquivo criado: harve_escola.db")
 
+    except Exception as erro:
+        print(f"  ❌ Erro: {erro}")
+        conn = None
 
-# ────────────────────────────────────────────────────────────
-#  RESUMO DO BLOCO
-# ────────────────────────────────────────────────────────────
-print()
-print("=" * 50)
-print("  RESUMO")
-print("=" * 50)
-print("  1. Credenciais  → 5 informações para acessar o banco")
-print("  2. String       → formato que o SQLAlchemy entende")
-print("  3. Engine       → motor de conexão")
-print("  4. connect()    → abre a conexão")
-print("  5. close()      → fecha a conexão (sempre!)")
+    finally:
+        if conn:
+            conn.close()
+            print()
+            print("  🔒 Conexão fechada.")
+
+    print()
+    print("=" * 50)
+    print("  RESUMO")
+    print("=" * 50)
+    print("  1. Credenciais  → 5 informações para acessar o banco")
+    print("  2. String       → formato que o SQLAlchemy entende")
+    print("  3. Engine       → motor de conexão")
+    print("  4. connect()    → abre a conexão")
+    print("  5. close()      → fecha a conexão (sempre!)")

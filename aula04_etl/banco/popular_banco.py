@@ -11,15 +11,33 @@
 # Dependências: pip install requests pandas sqlalchemy pymysql
 # =============================================================================
 
+import importlib.util
+from pathlib import Path
+
 import requests
 import pandas as pd
 from sqlalchemy import create_engine
 
-# ⚠️  Preencha com as credenciais reais do banco
-STRING_DE_CONEXAO = "mysql+pymysql://USUARIO:SENHA@HOST:3306/BANCO"
+# Importa as credenciais do bloco 2
+cred_path = Path(__file__).resolve().parents[1] / "02_credenciais_bd" / "credenciais.py"
+spec = importlib.util.spec_from_file_location("credenciais_module", cred_path)
+cred_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(cred_module)
+credenciais = cred_module.credenciais
 
-conn = create_engine(STRING_DE_CONEXAO).connect()
-print("✅ Conectado ao banco.\n")
+STRING_DE_CONEXAO = (
+    f"mysql+pymysql://{credenciais['username']}:{credenciais['password']}@"
+    f"{credenciais['hostname']}:{credenciais['port']}/{credenciais['database']}"
+)
+
+try:
+    conn = create_engine(STRING_DE_CONEXAO).connect()
+    print("✅ Conectado ao banco.\n")
+except Exception as e:
+    raise SystemExit(
+        "Erro ao conectar no banco MySQL. Verifique as credenciais e a rede. "
+        f"Detalhes: {e}"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

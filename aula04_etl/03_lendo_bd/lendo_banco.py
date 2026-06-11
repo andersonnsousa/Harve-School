@@ -26,11 +26,15 @@ print()
 #
 #  SQLite cria um arquivo .db local — sem servidor, sem senha
 #  É o mesmo conceito do MySQL, só mais simples para aprender
+from pathlib import Path
 
-STRING_DE_CONEXAO = "sqlite:///harve_escola.db"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+DB_PATH = ROOT_DIR / "harve_escola.db"
+STRING_DE_CONEXAO = f"sqlite:///{DB_PATH.as_posix()}"
 
 engine = create_engine(STRING_DE_CONEXAO)
 conn   = engine.connect()
+print(f"  ℹ️  Usando banco SQLite em: {DB_PATH}")
 
 # Carregando dados reais de jogadores FIFA
 # (o CSV vem do site da Harve)
@@ -39,6 +43,18 @@ print("  📥 Carregando dados FIFA para o banco...")
 URL_FIFA = "https://www.harve.com.br/praticas/fifaplayers_pt.csv"
 try:
     df_fifa = pd.read_csv(URL_FIFA)
+    df_fifa.columns = df_fifa.columns.str.strip()
+    rename_map = {
+        'nome': 'Name',
+        'nacionalidade': 'Nationality',
+        'potencial': 'Potential',
+        'pontuação geral': 'Overall',
+        'idade': 'Age',
+        'time': 'Club'
+    }
+    if 'potencial' in df_fifa.columns or 'pontuação geral' in df_fifa.columns:
+        df_fifa = df_fifa.rename(columns=rename_map)
+        print("  ℹ️  Nomes de coluna do CSV traduzidos para inglês para a tabela SQLite.")
     df_fifa.to_sql("fifanova", conn, if_exists="replace", index=False)
     conn.commit()
     print(f"  ✅ Tabela 'fifanova' criada — {len(df_fifa)} jogadores")
