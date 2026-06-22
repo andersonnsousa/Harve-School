@@ -1,5 +1,6 @@
 # Harve School — Material de Aulas
-
+dfhotel = pd.read_csv('http://harve.com.br/praticas/reservashotel.csv')
+dfhotel.head()
 ## 🌐 O que está neste repositório
 Este repositório contém material de várias aulas e turmas da Harve School, não apenas Python ETL.
 A ideia é organizar o conteúdo por pasta de turma, com cada turma tendo suas próprias pastas de aulas e material dentro delas.
